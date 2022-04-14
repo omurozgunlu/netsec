@@ -59,7 +59,9 @@ def getNodeCounts(array):
         else:
             countDict[value['nodeCount']]=1
     return countDict
-
+def addlabels(x,y):
+    for i in range(len(x)):
+        plt.text(i, y[i], y[i], ha = 'center')
 
 if __name__ == "__main__":
     result=readCSV()
@@ -83,23 +85,13 @@ if __name__ == "__main__":
         avgMSE.append(value['avgMSE'])     
 
     x = np.arange(len(nodeCounts))  # the label locations
-    width = 0.25  # the width of the bars
-
-    
-    
-    # rects2 = ax.bar(x + width/2, avgReferenceExecutionTime, width, label='Average Reference Exection Time ')
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    plt.ylabel('Average MSE')
+    plt.ylabel('Average Compile Time')
     plt.xlabel('Node Count')
-    plt.title('Average MSE Per Node Count')
+    plt.title('Average compile Time Per Node Count')
     plt.xticks(x,nodeCounts)
-    # plt.bar_label(rects1, padding=3)
-    plt.bar(nodeCounts.keys(), avgMSE)
-    # ax.bar_label(rects2, padding=3)
-
+    plt.bar(nodeCounts.keys(), avgCompileTime)
+    addlabels(nodeCounts.keys(), avgCompileTime)
     plt.tight_layout()
-
     plt.show()
         
     
