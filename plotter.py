@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
+
 def readCSV():
     csvArray=[]
     with open('./results/results.csv', newline='') as csvfile:
@@ -17,8 +18,89 @@ def readCSV():
                 lineCount+=1
             else:
                 lineCount+=1
-        print(lineCount)
     return csvArray
+def getAverageStatsPerNodeCount(array):
+    countDict=getNodeCounts(array)
+    statDict={}
+    for value in array:
+        nodeCount=float(value['nodeCount'])
+        compileTime=float(value['compileTime'])
+        keyGenerationTime=float(value['keyGenerationTime'])
+        encryptionTime=float(value['encryptionTime'])
+        executionTime=float(value['executionTime'])
+        decryptionTime=float(value['decryptionTime'])
+        referenceExecutionTime=float(value['referenceExecutionTime'])
+        mse=float(value['MSE'])
+        if nodeCount not in statDict:
+            statDict[nodeCount]={'avgCompileTime':compileTime,'avgKeyGenerationTime':keyGenerationTime,'avgEncryptionTime':encryptionTime,'avgExecutionTime':executionTime,'avgdecryptionTime':decryptionTime,'avgReferenceExecutionTime':referenceExecutionTime,'avgMSE':mse}
+        else:
+            statDict[nodeCount]['avgCompileTime']+=compileTime
+            statDict[nodeCount]['avgKeyGenerationTime']+=keyGenerationTime
+            statDict[nodeCount]['avgEncryptionTime']+=encryptionTime
+            statDict[nodeCount]['avgExecutionTime']+=executionTime
+            statDict[nodeCount]['avgdecryptionTime']+=decryptionTime
+            statDict[nodeCount]['avgReferenceExecutionTime']+=referenceExecutionTime
+            statDict[nodeCount]['avgMSE']+=mse
+    for key,value in statDict.items():
+        value['avgCompileTime']=value['avgCompileTime']/int(countDict[str(int(key))])
+        value['avgKeyGenerationTime']=value['avgKeyGenerationTime']/int(countDict[str(int(key))])
+        value['avgEncryptionTime']=value['avgEncryptionTime']/int(countDict[str(int(key))])
+        value['avgExecutionTime']=value['avgExecutionTime']/int(countDict[str(int(key))])
+        value['avgdecryptionTime']=value['avgdecryptionTime']/int(countDict[str(int(key))])
+        value['avgReferenceExecutionTime']=value['avgReferenceExecutionTime']/int(countDict[str(int(key))])
+        value['avgMSE']=value['avgMSE']/int(countDict[str(int(key))])
+    return statDict
+
+def getNodeCounts(array):
+    countDict={}
+    for index,value in enumerate(array):
+        if value['nodeCount'] in countDict:
+            countDict[value['nodeCount']]+=1
+        else:
+            countDict[value['nodeCount']]=1
+    return countDict
+
+
 if __name__ == "__main__":
     result=readCSV()
+    statDict=getAverageStatsPerNodeCount(result)
+    nodeCounts=getNodeCounts(result)
+
+    avgCompileTime = []
+    avgKeyGenerationTime = []
+    avgEncryptionTime = []
+    avgExecutionTime = []
+    avgdecryptionTime = []
+    avgReferenceExecutionTime = []
+    avgMSE = []
+    for key,value in statDict.items():
+        avgCompileTime.append(value['avgCompileTime']) 
+        avgKeyGenerationTime.append(value['avgKeyGenerationTime'])   
+        avgEncryptionTime.append(value['avgEncryptionTime'])    
+        avgExecutionTime.append(value['avgExecutionTime'])     
+        avgdecryptionTime.append(value['avgdecryptionTime'])     
+        avgReferenceExecutionTime.append(value['avgReferenceExecutionTime'])     
+        avgMSE.append(value['avgMSE'])     
+
+    x = np.arange(len(nodeCounts))  # the label locations
+    width = 0.25  # the width of the bars
+
+    
+    
+    # rects2 = ax.bar(x + width/2, avgReferenceExecutionTime, width, label='Average Reference Exection Time ')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    plt.ylabel('Average MSE')
+    plt.xlabel('Node Count')
+    plt.title('Average MSE Per Node Count')
+    plt.xticks(x,nodeCounts)
+    # plt.bar_label(rects1, padding=3)
+    plt.bar(nodeCounts.keys(), avgMSE)
+    # ax.bar_label(rects2, padding=3)
+
+    plt.tight_layout()
+
+    plt.show()
+        
+    
     
