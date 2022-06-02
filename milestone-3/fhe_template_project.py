@@ -24,16 +24,18 @@ def serializeGraphZeroOne(GG,vec_size):
     g = []
     for row in range(n):
         for column in range(n):
-            if GG.has_edge(row, column) or row==column: # I assumed the vertices are connected to themselves
+            if GG.has_edge(row, column): # I assumed the vertices are connected to themselves
                 weight = 1
             else:
                 weight = 0 
-            g.append( weight  )  
-            key = str(row)+'-'+str(column)
-            graphdict[key] = [weight] # EVA requires str:listoffloat
+            g.append(weight)
+            if weight>0:
+                if row in graphdict:
+                    graphdict[row][column] = weight  # EVA requires str:listoffloat
+                else:
+                    graphdict[row] = {}
+                    graphdict[row][column] = weight 
     # EVA vector size has to be large, if the vector representation of the graph is smaller, fill the eva vector with zeros
-    for i in range(vec_size - n*n): 
-        g.append(0.0)
     return g, graphdict
 
 # To display the generated graph
@@ -55,8 +57,8 @@ def prepareInput(n, m):
 # This is the dummy analytic service
 # You will implement this service based on your selected algorithm
 # you can other parameters using global variables !!! do not change the signature of this function 
-def graphanalticprogram(graph):
-    reval = graph<<1 ## Check what kind of operators are there in EVA, this is left shift
+def graphanalticprogram(graph,n):
+    reval = graph<<n ## Check what kind of operators are there in EVA, this is left shift
     # Note that you cannot compute everything using EVA/CKKS
     # For instance, comparison is not possible
     # You can add, subtract, multiply, negate, shift right/left
@@ -64,7 +66,7 @@ def graphanalticprogram(graph):
     return reval
     
 # Do not change this 
-# the parameter n can be passed in the call from simulate function
+# the parameter n can be passed in the call from simulate function
 class EvaProgramDriver(EvaProgram):
     def __init__(self, name, vec_size=4096, n=4):
         self.n = n
@@ -93,7 +95,7 @@ def simulate(n):
     graphanaltic = EvaProgramDriver("graphanaltic", vec_size=m,n=n)
     with graphanaltic:
         graph = Input('Graph')
-        reval = graphanalticprogram(graph)
+        reval = graphanalticprogram(graph,n)
         Output('ReturnedValue', reval)
     
     prog = graphanaltic
@@ -135,7 +137,7 @@ def simulate(n):
 
 
 if __name__ == "__main__":
-    simcnt = 3 #The number of simulation runs, set it to 3 during development otherwise you will wait for a long time
+    simcnt = 1 #The number of simulation runs, set it to 3 during development otherwise you will wait for a long time
     # For benchmarking you must set it to a large number, e.g., 100
     #Note that file is opened in append mode, previous results will be kept in the file
     resultfile = open("results.csv", "a")  # Measurement results are collated in this file for you to plot later on
