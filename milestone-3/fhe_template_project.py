@@ -5,6 +5,39 @@ from eva.metric import valuation_mse
 import timeit
 import networkx as nx
 from random import random
+def longestPaths(neighbors):
+    longestPathsDict = {}
+    for node in neighbors:
+        longestPathsDict[node]=[]
+        visited = [False for x in range(len(neighbors.keys()))]
+        DFS(neighbors,node,visited,longestPathsDict)
+    return longestPathsDict
+        
+
+def DFS(neighbors,src,visited,longestPathsDict):
+    visited[src]= True
+    for key in neighbors[src]:
+        tempArray=[]
+        if (not visited[key]):
+            tempArray.append(neighbors[src][key])
+            # tempArray.append(neighbors[src][key])
+            innerDFS(neighbors,key,visited,tempArray)
+            longestPathsDict[src].append(tempArray)
+        print(tempArray)
+            
+def innerDFS(neighbors,src,visited,tempArray):
+    visited[src]= True
+    allVisited = True
+    reset = False
+    for key in neighbors[src]:
+        if reset:
+            del tempArray[-1]
+        if (not visited[key]):
+            tempArray.append(neighbors[src][key])
+            # print(tempArray)
+            allVisited = False
+            reset = innerDFS(neighbors,key,visited,tempArray)           
+    return allVisited
 
 # Using networkx, generate a random graph
 # You can change the way you generate the graph
