@@ -92,16 +92,13 @@ def prepareInput(n, m):
 # This is the dummy analytic service
 # You will implement this service based on your selected algorithm
 # you can other parameters using global variables !!! do not change the signature of this function 
+
+
 def graphanalticprogram(graph,n):
     temp = graph
     for i in range(n-1):
         graph = graph<<1
         temp = graph + temp
-    ## Check what kind of operators are there in EVA, this is left shift
-    # Note that you cannot compute everything using EVA/CKKS
-    # For instance, comparison is not possible
-    # You can add, subtract, multiply, negate, shift right/left
-    # You will have to implement an interface with the trusted entity for comparison (send back the encrypted values, push the trusted entity to compare and get the comparison output)
     return temp
     
 # Do not change this 
