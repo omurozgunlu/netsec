@@ -84,19 +84,25 @@ def prepareInput(n, m):
     input = {}
     GG = generateGraph(n,3,0.5)
     graph, graphdict = serializeGraphZeroOne(GG,m)
-    input['Graph'] = graph
-    return input
+    paths = longestPaths(graphdict)
+    # input['Graph'] = graph
+    # return input
+    return paths
 
 # This is the dummy analytic service
 # You will implement this service based on your selected algorithm
 # you can other parameters using global variables !!! do not change the signature of this function 
 def graphanalticprogram(graph,n):
-    reval = graph<<n ## Check what kind of operators are there in EVA, this is left shift
+    temp = graph
+    for i in range(n-1):
+        graph = graph<<1
+        temp = graph + temp
+    ## Check what kind of operators are there in EVA, this is left shift
     # Note that you cannot compute everything using EVA/CKKS
     # For instance, comparison is not possible
     # You can add, subtract, multiply, negate, shift right/left
     # You will have to implement an interface with the trusted entity for comparison (send back the encrypted values, push the trusted entity to compare and get the comparison output)
-    return reval
+    return temp
     
 # Do not change this 
 # the parameter n can be passed in the call from simulate function
@@ -115,20 +121,19 @@ class EvaProgramDriver(EvaProgram):
 # You can modify the input parameters
 # n is the number of nodes in your graph
 # If you require additional parameters, add them
-def simulate(n):
-    m = 4096*4
-    print("Will start simulation for ", n)
+def simulate(path,m,arrLength):
+    #print("Will start simulation for ", n)
     config = {}
     config['warn_vec_size'] = 'false'
     config['lazy_relinearize'] = 'true'
     config['rescaler'] = 'always'
     config['balance_reductions'] = 'true'
-    inputs = prepareInput(n, m)
-
-    graphanaltic = EvaProgramDriver("graphanaltic", vec_size=m,n=n)
+    inputs = {}
+    inputs['Graph']=path
+    graphanaltic = EvaProgramDriver("graphanaltic", vec_size=m,n=arrLength)
     with graphanaltic:
         graph = Input('Graph')
-        reval = graphanalticprogram(graph,n)
+        reval = graphanalticprogram(graph,arrLength)
         Output('ReturnedValue', reval)
     
     prog = graphanaltic
@@ -161,13 +166,16 @@ def simulate(n):
     referenceexecutiontime = (timeit.default_timer() - start) * 1000.0 #ms
     
     # Change this if you want to output something or comment out the two lines below
-    for key in outputs:
-        print(key, float(outputs[key][0]), float(reference[key][0]))
+    # for key in outputs:
+    #     print(key, float(outputs[key][0]), float(reference[key][0]))
 
     mse = valuation_mse(outputs, reference) # since CKKS does approximate computations, this is an important measure that depicts the amount of error
 
-    return compiletime, keygenerationtime, encryptiontime, executiontime, decryptiontime, referenceexecutiontime, mse
+    return compiletime, keygenerationtime, encryptiontime, executiontime, decryptiontime, referenceexecutiontime, mse, outputs
 
+def fillWithZeros(arr,m):
+    for i in range(m - len(arr)): 
+        arr.append(0.0)
 
 if __name__ == "__main__":
     simcnt = 1 #The number of simulation runs, set it to 3 during development otherwise you will wait for a long time
@@ -180,11 +188,34 @@ if __name__ == "__main__":
     print("Simulation campaing started:")
     for nc in range(36,64,4): # Node counts for experimenting various graph sizes
         n = nc
-        resultfile = open("results.csv", "a") 
+        resultfile = open("results.csv", "a")
+        maxPathLength= 0
+        maxLength=0
         for i in range(simcnt):
             #Call the simulator
-            compiletime, keygenerationtime, encryptiontime, executiontime, decryptiontime, referenceexecutiontime, mse = simulate(n)
-            res = str(n) + "," + str(i) + "," + str(compiletime) + "," + str(keygenerationtime) + "," +  str(encryptiontime) + "," +  str(executiontime) + "," +  str(decryptiontime) + "," +  str(referenceexecutiontime) + "," +  str(mse) + "\n"
-            print(res)
-            resultfile.write(res)
+            m = 4096*4
+            paths = prepareInput(n, m)
+            tempPaths= paths
+            start = timeit.default_timer()
+            for key in paths:
+                for path in paths[key]:
+                    arrLength = len(path)
+                    fillWithZeros(path,m)
+                    compiletime, keygenerationtime, encryptiontime, executiontime, decryptiontime, referenceexecutiontime, mse,outputs = simulate(path,m,arrLength)
+                    if (outputs['ReturnedValue'][0]>maxPathLength):
+                        maxPathLength = outputs['ReturnedValue'][0]
+            totalExecutionTime = (timeit.default_timer() - start) * 1000.0 #ms
+            print(totalExecutionTime)
+            for key in tempPaths:
+                for arr in tempPaths[key]:
+                    tempVal=0
+                    for element in arr:
+                        tempVal = tempVal + element
+                    if tempVal > maxLength:
+                        maxLength = tempVal
+            mse = pow((maxPathLength - maxLength),2)
+            print('node count ',nc)
+            print(maxPathLength)
+            print(maxLength)
+            print(mse)
         resultfile.close()
